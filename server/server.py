@@ -5,7 +5,7 @@ import socket
 clients = dict()
 
 # Função para lidar com as mensagens de um cliente
-def handle_client(client, receiver):
+def handle_client_single(client, receiver):
   while True:
       try:
           msg = client.recv(2048)
@@ -14,12 +14,22 @@ def handle_client(client, receiver):
           remove_client(client)
           break
 
+def handle_client_broadcast(client):
+  while True:
+      try:
+          msg = client.recv(2048)
+          broadcast(msg, client)
+      except:
+          remove_client(client)
+          break
+
+
 # Função para transmitir mensagens para todos os clientes
 def broadcast(msg, sender):
   for client in clients:
-      if client != sender:
+      if clients[client] != sender:
           try:
-              client.send(msg)
+              clients[client].send(msg)
           except:
               remove_client(client)
 
@@ -50,21 +60,29 @@ def main():
 
   while True:
       client, addr = server.accept()
+      type = client.recv(2048)
+      client.send(('ok').encode('utf-8'))
+
       username = client.recv(2048)
       clients[username.decode('utf-8')] = client
       print(f'Cliente conectado com sucesso. IP: {addr}')
+      
+      if (type.decode('utf-8') == 'single'):
+        nomes = ''
+        for name in clients:
+            nomes += f'{name}\n'
 
-      nomes = ''
-      for name in clients:
-        nomes += f'{name}\n'
-
-      client.send(nomes.encode('utf-8'))
+        client.send(nomes.encode('utf-8'))
         
-      receiver = client.recv(2048)
+        receiver = client.recv(2048)
 
-      # Inicia uma nova thread para lidar com as mensagens do cliente
-      thread = threading.Thread(target=handle_client, args=(client, receiver.decode('utf-8')))
-      thread.start()
+        # Inicia uma nova thread para lidar com as mensagens do cliente
+        thread = threading.Thread(target=handle_client_single, args=(client, receiver.decode('utf-8')))
+        thread.start()
+      else :   
+         thread = threading.Thread(target=handle_client_broadcast, args=(client,))
+         thread.start()
+         
 
 # Executa o programa
 main()

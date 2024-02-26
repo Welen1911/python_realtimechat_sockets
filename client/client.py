@@ -5,22 +5,26 @@ import socket
 def main():
   # Cria um objeto de soquete para o cliente
   client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+  type = input('Tipo de conversa [single/broadcast]')
   username = input('Usuário> ')
   try:
       # Tenta se conectar ao servidor na porta 7777
       client.connect(('localhost', 7777))
-      client.send(username.encode('utf-8'))
-
-      print("Usuários:\n")
-    #   while True:
-      name = client.recv(1000000) 
-      print(f"{name.decode('utf-8')}\n")
-        # if not data:
-        #    break
-
-      sendTo = input("Conversar com> ")
-      client.send(sendTo.encode('utf-8'))
+      client.send(type.encode('utf-8'))
+      ok = client.recv(2048)
+      
+      if (type == 'single'):
+        client.send(username.encode('utf-8'))
+        print("Usuários:\n")
+      
+        names = client.recv(2048) 
+        print(f"{names.decode('utf-8')}\n")
+      
+        sendTo = input("Conversar com> ")
+        client.send(sendTo.encode('utf-8'))
+      else :
+        client.send(username.encode('utf-8'))
+ 
       
   except:
       # Se não conseguir se conectar, exibe uma mensagem e encerra o programa
