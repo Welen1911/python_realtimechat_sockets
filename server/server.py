@@ -2,7 +2,8 @@ import threading
 import socket
 
 # Lista de clientes conectados ao servidor
-clients = dict()
+clientsSingle = dict()
+clientsBroad = dict()
 
 # Função para lidar com as mensagens de um cliente
 def handle_client_single(client, receiver):
@@ -11,7 +12,7 @@ def handle_client_single(client, receiver):
           msg = client.recv(2048)
           single(msg, client, receiver)
       except:
-          remove_client(client)
+          remove_client_single(client)
           break
 
 def handle_client_broadcast(client):
@@ -20,31 +21,34 @@ def handle_client_broadcast(client):
           msg = client.recv(2048)
           broadcast(msg, client)
       except:
-          remove_client(client)
+          remove_client_broad(client)
           break
 
 
 # Função para transmitir mensagens para todos os clientes
 def broadcast(msg, sender):
-  for client in clients:
-      if clients[client] != sender:
+  for client in clientsBroad:
+      if clientsBroad[client] != sender:
           try:
-              clients[client].send(msg)
+              clientsBroad[client].send(msg)
           except:
-              remove_client(client)
+              remove_client_broad(client)
 
 # Função para transmitir mensagens apenas para um cliente
 def single(msg, sender, receiver):
-  for name in clients:
-      if clients[name] != sender and name == receiver:
+  for name in clientsSingle:
+      if clientsSingle[name] != sender and name == receiver:
           try:
-              clients[name].send(msg)
+              clientsSingle[name].send(msg)
           except:
-              remove_client(name)
+              remove_client_single(name)
 
 # Função para remover um cliente da lista
-def remove_client(client):
-  clients.pop(client)
+def remove_client_single(client):
+  clientsSingle.pop(client)
+
+def remove_client_broad(client):
+  clientsBroad.pop(client)
 
 # Função principal
 def main():
@@ -62,14 +66,15 @@ def main():
       client, addr = server.accept()
       type = client.recv(2048)
       client.send(('ok').encode('utf-8'))
-
-      username = client.recv(2048)
-      clients[username.decode('utf-8')] = client
-      print(f'Cliente conectado com sucesso. IP: {addr}')
-      
+     
       if (type.decode('utf-8') == 'single'):
+         
+        username = client.recv(2048)
+        clientsSingle[username.decode('utf-8')] = client
+        print(f'Cliente conectado com sucesso. IP: {addr}')
+      
         nomes = ''
-        for name in clients:
+        for name in clientsSingle:
             nomes += f'{name}\n'
 
         client.send(nomes.encode('utf-8'))
@@ -79,7 +84,13 @@ def main():
         # Inicia uma nova thread para lidar com as mensagens do cliente
         thread = threading.Thread(target=handle_client_single, args=(client, receiver.decode('utf-8')))
         thread.start()
-      else :   
+      
+      else :
+            
+         username = client.recv(2048)
+         clientsBroad[username.decode('utf-8')] = client
+         print(f'Cliente conectado com sucesso. IP: {addr}')
+
          thread = threading.Thread(target=handle_client_broadcast, args=(client,))
          thread.start()
          
