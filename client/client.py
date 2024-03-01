@@ -9,7 +9,7 @@ def main():
   username = input('Usuário> ')
   try:
       # Tenta se conectar ao servidor na porta 7777
-      client.connect(('localhost', 7777))
+      client.connect(('10.193.1.4', 7777))
       client.send(type.encode('utf-8'))
       ok = client.recv(2048)
       
